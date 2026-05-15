@@ -79,10 +79,15 @@
       const selectedCard = document.getElementById(cardId);
       selectedCard.classList.add('selected');
 
-      // Přesun difficulty-section vždy za celý games-grid
+      // Na mobilu (portrait) – hned za vybranou kartu
+      // Na desktopu – za celý grid
       const diffSection = document.getElementById('difficulty-section');
       const grid = document.getElementById('games-grid');
-      grid.insertAdjacentElement('afterend', diffSection);
+      if (window.innerWidth < 600) {
+        selectedCard.insertAdjacentElement('afterend', diffSection);
+      } else {
+        grid.insertAdjacentElement('afterend', diffSection);
+      }
 
       // Naplň tlačítka obtížnosti
       const T = CONFIG_STYLES.texts.difficulty;
