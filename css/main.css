@@ -215,9 +215,8 @@ h1, h2, h3 {
   margin-bottom: 40px;
 }
 .game-card {
-  width: 100%;
-  max-width: 380px;
   flex: 1 1 260px;
+  max-width: 380px;
   background: white;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
