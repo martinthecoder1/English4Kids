@@ -155,12 +155,23 @@
       }, 1000);
     }
 
+    // --- Text-to-speech ---
+    function speak(word) {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(word);
+      utter.lang = 'en-US';
+      utter.rate = 0.9;
+      window.speechSynthesis.speak(utter);
+    }
+
     // --- Klik na kartu ---
     function onCardClick(idx, el) {
       if (locked) return;
       if (el.classList.contains('flipped') || el.classList.contains('matched')) return;
 
       el.classList.add('flipped');
+      speak(cards[idx].word);
       flipped.push({ idx, el });
 
       if (flipped.length === 2) {
