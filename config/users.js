@@ -12,14 +12,14 @@ const CONFIG_USERS = [
   {
     id:     'Anita',                          // Interní ID (neměňte)
     name:   'Anita',                          // Jméno zobrazované na obrazovce
-    avatar: 'images/avatars/anita.jpg',       // ← Sem nahrajte fotku Anity
+    avatar: 'images/avatars/Anita.jpg',       // ← Sem nahrajte fotku Anity
     emoji:  '👧',                             // Záloha, pokud fotka chybí
     color:  '#FF6B9D',                        // Barva karty tohoto uživatele
   },
   {
     id:     'ariana',
     name:   'Ariana',
-    avatar: 'images/avatars/ariana.jpg',      // ← Sem nahrajte fotku Ariany
+    avatar: 'images/avatars/Ariana.jpg',      // ← Sem nahrajte fotku Ariany
     emoji:  '👧🏻',
     color:  '#4ECDC4',
   },
