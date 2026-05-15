@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Fun! – Pexeso</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <script src="config/styles.js?v=3"></script>
+  <script src="config/users.js?v=3"></script>
+  <script src="config/pexeso-data.js?v=3"></script>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <header class="page-header">
+      <button class="btn-back" onclick="App.navigate('menu.html')" id="btn-back">← Zpět</button>
+      <h1 class="app-title" id="game-title">Pexeso</h1>
+      <div class="user-badge" id="user-badge" style="display:none"></div>
+    </header>
+
+    <!-- Statistiky -->
+    <div class="pexeso-stats">
+      <div class="stat-box">
+        <div class="stat-value" id="stat-moves">0</div>
+        <div class="stat-label" id="stat-moves-label">Tahy</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="stat-matches">0/0</div>
+        <div class="stat-label" id="stat-matches-label">Páry</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="stat-time">00:00</div>
+        <div class="stat-label" id="stat-time-label">Čas</div>
+      </div>
+    </div>
+
+    <!-- Herní pole -->
+    <div class="pexeso-grid" id="pexeso-grid"></div>
+
+  </div>
+
+  <!-- Win overlay -->
+  <div class="win-overlay" id="win-overlay" style="display:none">
+    <div class="win-box">
+      <div class="win-emoji">🎉</div>
+      <div class="win-title" id="win-title">Skvělá práce!</div>
+      <div class="win-subtitle" id="win-subtitle"></div>
+      <div class="win-stats">
+        <div class="win-stat">
+          <div class="win-stat-value" id="win-moves">-</div>
+          <div class="win-stat-label" id="win-moves-label">Tahy</div>
+        </div>
+        <div class="win-stat">
+          <div class="win-stat-value" id="win-time">-</div>
+          <div class="win-stat-label" id="win-time-label">Čas</div>
+        </div>
+      </div>
+      <div class="win-buttons">
+        <button class="btn btn-primary" onclick="initGame()" id="btn-play-again">🔄 Hrát znovu</button>
+        <button class="btn btn-ghost"   onclick="App.navigate('menu.html')" id="btn-back-menu">🏠 Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js?v=3"></script>
+  <script>
+    // --- Stav hry ---
+    let flipped   = [];   // indexy aktuálně otočených karet
+    let locked    = false;
+    let moves     = 0;
+    let matches   = 0;
+    let totalPairs = 0;
+    let timerSec  = 0;
+    let timerInterval = null;
+    let cards     = [];   // pole objektů { type:'word'|'image', word, image, matched }
+
+    // --- Inicializace ---
+    function initGame() {
+      const T    = CONFIG_STYLES.texts;
+      const diff = App.getDifficulty();
+      const cfg  = CONFIG_PEXESO.difficulties[diff] || CONFIG_PEXESO.difficulties.easy;
+
+      totalPairs = cfg.pairs;
+      moves      = 0;
+      matches    = 0;
+      flipped    = [];
+      locked     = false;
+      timerSec   = 0;
+
+      // Texty
+      document.getElementById('btn-back').textContent         = T.backButton;
+      document.getElementById('game-title').textContent       = T.games.pexeso.name;
+      document.getElementById('stat-moves-label').textContent = T.game.moves;
+      document.getElementById('stat-matches-label').textContent = T.game.score;
+      document.getElementById('stat-time-label').textContent  = T.game.time;
+      document.getElementById('win-title').textContent        = T.game.congrats;
+      document.getElementById('win-moves-label').textContent  = T.game.moves;
+      document.getElementById('win-time-label').textContent   = T.game.time;
+      document.getElementById('btn-play-again').textContent   = T.game.playAgain;
+      document.getElementById('btn-back-menu').textContent    = T.game.backToMenu;
+
+      // Výběr a zamíchání karet
+      const pool   = shuffle(CONFIG_PEXESO.cards).slice(0, totalPairs);
+      const wordCards  = pool.map((c, i) => ({ id: i, type: 'word',  word: c.word, image: c.image, emoji: c.emoji }));
+      const imageCards = pool.map((c, i) => ({ id: i, type: 'image', word: c.word, image: c.image, emoji: c.emoji }));
+      cards = shuffle([...wordCards, ...imageCards]);
+
+      // Render gridu
+      const grid = document.getElementById('pexeso-grid');
+      grid.innerHTML = '';
+      grid.className = `pexeso-grid pairs-${totalPairs}`;
+
+      cards.forEach((card, idx) => {
+        const el = document.createElement('div');
+        el.className = 'pexeso-card';
+        el.dataset.idx = idx;
+
+        const inner = document.createElement('div');
+        inner.className = 'pexeso-card-inner';
+
+        // Zadní strana
+        const back = document.createElement('div');
+        back.className = 'pexeso-card-back';
+        back.textContent = '⭐';
+
+        // Přední strana
+        const front = document.createElement('div');
+        front.className = 'pexeso-card-front';
+        const mediaHtml = card.emoji
+          ? `<span class="card-emoji">${card.emoji}</span>`
+          : `<img src="${card.image}" alt="${card.word}"
+                 onerror="this.style.display='none'" />`;
+        front.innerHTML = `
+          ${mediaHtml}
+          <span class="card-word">${card.word}</span>
+        `;
+
+        inner.appendChild(back);
+        inner.appendChild(front);
+        el.appendChild(inner);
+        el.addEventListener('click', () => onCardClick(idx, el));
+        grid.appendChild(el);
+      });
+
+      // Statistiky
+      updateStats();
+      document.getElementById('win-overlay').style.display = 'none';
+
+      // Časovač
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timerSec++;
+        document.getElementById('stat-time').textContent = formatTime(timerSec);
+      }, 1000);
+    }
+
+    // --- Klik na kartu ---
+    function onCardClick(idx, el) {
+      if (locked) return;
+      if (el.classList.contains('flipped') || el.classList.contains('matched')) return;
+
+      el.classList.add('flipped');
+      flipped.push({ idx, el });
+
+      if (flipped.length === 2) {
+        locked = true;
+        moves++;
+        updateStats();
+
+        const [a, b] = flipped;
+        const cardA  = cards[a.idx];
+        const cardB  = cards[b.idx];
+
+        const isMatch = cardA.id === cardB.id && cardA.type !== cardB.type;
+
+        if (isMatch) {
+          a.el.classList.add('matched');
+          b.el.classList.add('matched');
+          matches++;
+          updateStats();
+          flipped = [];
+          locked  = false;
+
+          if (matches === totalPairs) {
+            setTimeout(showWin, 400);
+          }
+        } else {
+          // Špatný pár – otočit zpět po krátké prodlevě
+          a.el.classList.add('wrong');
+          b.el.classList.add('wrong');
+          setTimeout(() => {
+            a.el.classList.remove('flipped', 'wrong');
+            b.el.classList.remove('flipped', 'wrong');
+            flipped = [];
+            locked  = false;
+          }, 900);
+        }
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('stat-moves').textContent   = moves;
+      document.getElementById('stat-matches').textContent = `${matches}/${totalPairs}`;
+    }
+
+    function showWin() {
+      clearInterval(timerInterval);
+      document.getElementById('win-moves').textContent = moves;
+      document.getElementById('win-time').textContent  = formatTime(timerSec);
+      const user = App.getUser();
+      document.getElementById('win-subtitle').textContent =
+        user ? `Výborně, ${user.name}! 🌟` : '';
+      document.getElementById('win-overlay').style.display = 'flex';
+      launchConfetti();
+    }
+
+    // Start
+    document.addEventListener('DOMContentLoaded', () => {
+      requireUser();
+      initGame();
+    });
+  </script>
+</body>
+</html>

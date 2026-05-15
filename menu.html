@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Fun! – Výběr hry</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <script src="config/styles.js?v=3"></script>
+  <script src="config/users.js?v=3"></script>
+  <script src="config/pexeso-data.js?v=3"></script>
+  <script src="config/find-word-data.js?v=3"></script>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <header class="page-header">
+      <button class="btn-back" onclick="App.navigate('index.html')" id="btn-back">← Zpět</button>
+      <h1 class="app-title" id="app-title">🌟 English Fun!</h1>
+      <div class="user-badge" id="user-badge" style="display:none"></div>
+    </header>
+
+    <!-- Výběr hry -->
+    <h2 class="section-title" id="select-game-title">Vyber si hru! 🎮</h2>
+
+    <div class="games-grid" id="games-grid">
+
+      <!-- Pexeso -->
+      <div class="game-card" id="card-pexeso" onclick="selectGame('pexeso')">
+        <div class="game-card-icon"><img src="images/page_images/pexeso.png" alt="Pexeso" style="width:100%;height:100%;object-fit:contain;" /></div>
+        <div class="game-card-name" id="game-pexeso-name">Pexeso</div>
+        <div class="game-card-desc" id="game-pexeso-desc">Najdi dvojice obrázků a slovíček!</div>
+      </div>
+
+      <!-- Najdi obrázek -->
+      <div class="game-card" id="card-findword" onclick="selectGame('findWord')">
+        <div class="game-card-icon"><img src="images/page_images/vyhledat.png" alt="Najdi obrázek" style="width:100%;height:100%;object-fit:contain;" /></div>
+        <div class="game-card-name" id="game-findword-name">Najdi obrázek</div>
+        <div class="game-card-desc" id="game-findword-desc">Klikni na správný obrázek!</div>
+      </div>
+
+    </div>
+
+    <!-- Výběr obtížnosti (skrytý, zobrazí se po výběru hry) -->
+    <div class="difficulty-section" id="difficulty-section">
+      <div class="difficulty-label" id="difficulty-label">Vyber obtížnost:</div>
+      <div class="difficulty-buttons" id="difficulty-buttons"></div>
+      <button class="btn btn-primary btn-lg" id="btn-play" onclick="startGame()">▶ Hrát!</button>
+    </div>
+
+  </div>
+
+  <script src="js/app.js?v=3"></script>
+  <script>
+    let selectedGame = null;
+    let selectedDifficulty = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      requireUser();
+
+      // Texty
+      const T = CONFIG_STYLES.texts;
+      document.getElementById('app-title').textContent       = T.appTitle;
+      document.getElementById('btn-back').textContent        = T.backButton;
+      document.getElementById('select-game-title').textContent = T.selectGameTitle;
+      document.getElementById('game-pexeso-name').textContent  = T.games.pexeso.name;
+      document.getElementById('game-pexeso-desc').textContent  = T.games.pexeso.description;
+      document.getElementById('game-findword-name').textContent = T.games.findWord.name;
+      document.getElementById('game-findword-desc').textContent = T.games.findWord.description;
+      document.getElementById('difficulty-label').textContent   = T.difficulty.label;
+    });
+
+    function selectGame(game) {
+      selectedGame = game;
+
+      // Zvýrazni vybranou kartu
+      document.querySelectorAll('.game-card').forEach(c => c.classList.remove('selected'));
+      const cardId = game === 'pexeso' ? 'card-pexeso' : 'card-findword';
+      document.getElementById(cardId).classList.add('selected');
+
+      // Naplň tlačítka obtížnosti
+      const T = CONFIG_STYLES.texts.difficulty;
+      const cfg = game === 'pexeso' ? CONFIG_PEXESO.difficulties : CONFIG_FIND_WORD.difficulties;
+      const btnContainer = document.getElementById('difficulty-buttons');
+      btnContainer.innerHTML = '';
+
+      Object.entries(cfg).forEach(([key, val]) => {
+        const btn = document.createElement('button');
+        btn.className = 'difficulty-btn';
+        btn.textContent = val.label;
+        btn.dataset.diff = key;
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedDifficulty = key;
+        });
+        btnContainer.appendChild(btn);
+      });
+
+      // Předvyber lehkou
+      const first = btnContainer.querySelector('.difficulty-btn');
+      if (first) { first.click(); }
+
+      document.getElementById('difficulty-section').classList.add('visible');
+    }
+
+    function startGame() {
+      if (!selectedGame || !selectedDifficulty) return;
+      App.setGame(selectedGame);
+      App.setDifficulty(selectedDifficulty);
+      const page = selectedGame === 'pexeso' ? 'pexeso.html' : 'find-word.html';
+      App.navigate(page);
+    }
+  </script>
+</body>
+</html>

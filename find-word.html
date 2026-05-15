@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Fun! – Najdi obrázek</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <script src="config/styles.js?v=3"></script>
+  <script src="config/users.js?v=3"></script>
+  <script src="config/pexeso-data.js?v=3"></script>
+  <script src="config/find-word-data.js?v=3"></script>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <header class="page-header">
+      <button class="btn-back" onclick="App.navigate('menu.html')" id="btn-back">← Zpět</button>
+      <h1 class="app-title" id="game-title">🔍 Najdi obrázek</h1>
+      <div class="user-badge" id="user-badge" style="display:none"></div>
+    </header>
+
+    <div class="find-word-container">
+
+      <!-- Progress -->
+      <div style="width:100%;text-align:center">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+        </div>
+        <div class="progress-label" id="progress-label">Otázka 1 z 10</div>
+      </div>
+
+      <!-- Skóre -->
+      <div class="pexeso-stats">
+        <div class="stat-box">
+          <div class="stat-value" id="stat-score">0</div>
+          <div class="stat-label" id="stat-score-label">Skóre</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="stat-streak">0</div>
+          <div class="stat-label">🔥 Série</div>
+        </div>
+      </div>
+
+      <!-- Slovo k nalezení -->
+      <div class="word-display" id="word-display">???</div>
+
+      <!-- Mřížka obrázků -->
+      <div class="choices-grid" id="choices-grid"></div>
+
+    </div>
+  </div>
+
+  <!-- Win overlay -->
+  <div class="win-overlay" id="win-overlay" style="display:none">
+    <div class="win-box">
+      <div class="win-emoji" id="win-emoji">🎉</div>
+      <div class="win-title" id="win-title">Hotovo!</div>
+      <div class="win-subtitle" id="win-subtitle"></div>
+      <div class="win-stats">
+        <div class="win-stat">
+          <div class="win-stat-value" id="win-score">-</div>
+          <div class="win-stat-label" id="win-score-label">Skóre</div>
+        </div>
+        <div class="win-stat">
+          <div class="win-stat-value" id="win-accuracy">-</div>
+          <div class="win-stat-label">Přesnost</div>
+        </div>
+      </div>
+      <div class="win-buttons">
+        <button class="btn btn-primary" onclick="initGame()" id="btn-play-again">🔄 Hrát znovu</button>
+        <button class="btn btn-ghost"   onclick="App.navigate('menu.html')" id="btn-back-menu">🏠 Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js?v=3"></script>
+  <script>
+    // --- Stav hry ---
+    let questions    = [];  // [{ correct: card, choices: [card,...] }]
+    let currentQ     = 0;
+    let score        = 0;
+    let streak       = 0;
+    let totalAnswers = 0;
+
+    function initGame() {
+      const T    = CONFIG_STYLES.texts;
+      const diff = App.getDifficulty();
+      const cfg  = CONFIG_FIND_WORD.difficulties[diff] || CONFIG_FIND_WORD.difficulties.easy;
+      const numChoices = cfg.choices;
+      const total = Math.min(CONFIG_FIND_WORD.questionsPerRound, CONFIG_PEXESO.cards.length);
+
+      currentQ     = 0;
+      score        = 0;
+      streak       = 0;
+      totalAnswers = 0;
+
+      // Texty
+      document.getElementById('btn-back').textContent        = T.backButton;
+      document.getElementById('game-title').textContent      = T.games.findWord.name;
+      document.getElementById('stat-score-label').textContent = T.game.score;
+      document.getElementById('win-score-label').textContent  = T.game.score;
+      document.getElementById('btn-play-again').textContent   = T.game.playAgain;
+      document.getElementById('btn-back-menu').textContent    = T.game.backToMenu;
+
+      // Sestavení otázek
+      const pool = shuffle(CONFIG_PEXESO.cards).slice(0, total);
+      questions = pool.map(correct => {
+        const distractors = shuffle(
+          CONFIG_PEXESO.cards.filter(c => c.word !== correct.word)
+        ).slice(0, numChoices - 1);
+        const choices = shuffle([correct, ...distractors]);
+        return { correct, choices };
+      });
+
+      document.getElementById('win-overlay').style.display = 'none';
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const T = CONFIG_STYLES.texts;
+      const q = questions[currentQ];
+      const total = questions.length;
+
+      // Progress
+      const pct = (currentQ / total) * 100;
+      document.getElementById('progress-bar').style.width = pct + '%';
+      document.getElementById('progress-label').textContent =
+        `${T.game.question} ${currentQ + 1} ${T.game.of} ${total}`;
+
+      // Statistiky
+      document.getElementById('stat-score').textContent  = score;
+      document.getElementById('stat-streak').textContent = streak;
+
+      // Slovo
+      document.getElementById('word-display').textContent = q.correct.word;
+
+      // Volby
+      const grid = document.getElementById('choices-grid');
+      const numChoices = q.choices.length;
+      grid.className = `choices-grid choices-${numChoices}`;
+      grid.innerHTML = '';
+
+      q.choices.forEach(choice => {
+        const card = document.createElement('div');
+        card.className = 'choice-card';
+        if (choice.emoji) {
+          card.innerHTML = `<span class="card-emoji">${choice.emoji}</span>`;
+        } else {
+          card.innerHTML = `<img src="${choice.image}" alt="${choice.word}"
+            onerror="this.parentElement.innerHTML='<span style=\\'font-size:1.3rem;font-weight:700;color:var(--color-primary)\\'>${choice.word}</span>'" />`;
+        }
+
+        card.addEventListener('click', () => onChoiceClick(choice, card, q.correct));
+        grid.appendChild(card);
+      });
+    }
+
+    function onChoiceClick(chosen, el, correct) {
+      // Zamkni všechny karty
+      document.querySelectorAll('.choice-card').forEach(c => c.classList.add('disabled'));
+      totalAnswers++;
+
+      if (chosen.word === correct.word) {
+        // Správně
+        el.classList.add('correct');
+        score++;
+        streak++;
+        document.getElementById('stat-score').textContent  = score;
+        document.getElementById('stat-streak').textContent = streak;
+      } else {
+        // Špatně – ukaž kde je správně
+        el.classList.add('wrong');
+        document.querySelectorAll('.choice-card').forEach((c, i) => {
+          const q = questions[currentQ];
+          if (q.choices[i] && q.choices[i].word === correct.word) {
+            c.classList.add('correct');
+          }
+        });
+        streak = 0;
+        document.getElementById('stat-streak').textContent = 0;
+      }
+
+      // Přejít na další po prodlevě
+      setTimeout(() => {
+        currentQ++;
+        if (currentQ >= questions.length) {
+          showWin();
+        } else {
+          renderQuestion();
+        }
+      }, CONFIG_FIND_WORD.feedbackDuration);
+    }
+
+    function showWin() {
+      const T = CONFIG_STYLES.texts;
+      const accuracy = Math.round((score / questions.length) * 100);
+      const user = App.getUser();
+
+      let emoji = '🎉';
+      let subtitle = user ? `Výborně, ${user.name}!` : '';
+      if (accuracy === 100) { emoji = '🏆'; subtitle += ' Perfektní skóre! 🌟'; }
+      else if (accuracy >= 70) { emoji = '🎊'; subtitle += ' Skvělá práce!'; }
+      else { emoji = '💪'; subtitle += ' Zkus to znovu!'; }
+
+      document.getElementById('win-emoji').textContent    = emoji;
+      document.getElementById('win-title').textContent    = T.game.congrats;
+      document.getElementById('win-subtitle').textContent = subtitle;
+      document.getElementById('win-score').textContent    = `${score}/${questions.length}`;
+      document.getElementById('win-accuracy').textContent = accuracy + ' %';
+      document.getElementById('win-overlay').style.display = 'flex';
+
+      if (accuracy >= 70) launchConfetti();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      requireUser();
+      initGame();
+    });
+  </script>
+</body>
+</html>

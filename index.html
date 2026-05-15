@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Fun!</title>
+  <link rel="stylesheet" href="css/main.css" />
+
+  <!-- Konfigurace – načíst jako první -->
+  <script src="config/styles.js?v=3"></script>
+  <script src="config/users.js?v=3"></script>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Nadpis -->
+    <header class="page-header" style="justify-content:center">
+      <h1 class="app-title" id="app-title">🌟 English Fun!</h1>
+    </header>
+
+    <!-- Výzva k výběru -->
+    <h2 class="section-title" id="select-title">Kdo dnes bude hrát?</h2>
+
+    <!-- Karty uživatelů – generováno z config/users.js -->
+    <div class="users-grid" id="users-grid"></div>
+
+  </div>
+
+  <!-- Sdílená logika -->
+  <script src="js/app.js?v=3"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // Texty z konfigurace
+      document.getElementById('app-title').textContent  = CONFIG_STYLES.texts.appTitle;
+      document.getElementById('select-title').textContent = CONFIG_STYLES.texts.selectUserTitle;
+
+      // Vyrenderuj karty uživatelů
+      const grid = document.getElementById('users-grid');
+
+      CONFIG_USERS.forEach(user => {
+        const card = document.createElement('div');
+        card.className = 'user-card';
+        card.style.borderColor = user.color;
+        card.innerHTML = `
+          <div class="user-card-photo" style="border-color:${user.color}">
+            <img src="${user.avatar}" alt="${user.name}"
+                 onerror="this.parentElement.textContent='${user.emoji}'" />
+          </div>
+          <span class="user-card-name" style="color:${user.color}">${user.name}</span>
+        `;
+
+        card.addEventListener('click', () => {
+          App.setUser(user);
+          App.navigate('menu.html');
+        });
+
+        grid.appendChild(card);
+      });
+    });
+  </script>
+</body>
+</html>
