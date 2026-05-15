@@ -205,16 +205,19 @@ h1, h2, h3 {
 /* --- Karty her (menu.html) --- */
 .games-grid {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
   gap: 24px;
   width: 100%;
-  max-width: 400px;
+  max-width: 860px;
   margin-bottom: 40px;
 }
 .game-card {
   width: 100%;
   max-width: 380px;
+  flex: 1 1 260px;
   background: white;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
