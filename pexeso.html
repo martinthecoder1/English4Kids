@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>English Fun! – Pexeso</title>
   <link rel="stylesheet" href="css/main.css" />
-  <script src="config/styles.js?v=3"></script>
-  <script src="config/users.js?v=3"></script>
-  <script src="config/pexeso-data.js?v=3"></script>
+  <script src="config/styles.js?v=4"></script>
+  <script src="config/users.js?v=4"></script>
+  <script src="config/pexeso-data.js?v=4"></script>
 </head>
 <body>
   <div class="page">
@@ -63,7 +63,7 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=3"></script>
+  <script src="js/app.js?v=4"></script>
   <script>
     // --- Stav hry ---
     let flipped   = [];   // indexy aktuálně otočených karet
@@ -156,12 +156,34 @@
     }
 
     // --- Text-to-speech ---
+    function getBestVoice() {
+      const voices = window.speechSynthesis.getVoices();
+      // Preferované ženské hlasy (kvalitní, přirozené)
+      const preferred = ['Flo (English (United States))', 'Sandy (English (United States))',
+                         'Shelley (English (United States))', 'Samantha',
+                         'Karen', 'Moira', 'Google US English', 'Microsoft Zira', 'Microsoft Jenny'];
+      for (const name of preferred) {
+        const v = voices.find(v => v.name.includes(name));
+        if (v) return v;
+      }
+      // Fallback: jakýkoliv ženský hlas v en-US / en-GB
+      const female = voices.find(v =>
+        (v.lang === 'en-US' || v.lang === 'en-GB') && /female|woman|girl/i.test(v.name)
+      );
+      if (female) return female;
+      // Poslední záchrana: první anglický hlas
+      return voices.find(v => v.lang.startsWith('en')) || null;
+    }
+
     function speak(word) {
       if (!window.speechSynthesis) return;
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(word);
       utter.lang = 'en-US';
-      utter.rate = 0.9;
+      utter.rate = 0.85;
+      utter.pitch = 1.1;
+      const voice = getBestVoice();
+      if (voice) utter.voice = voice;
       window.speechSynthesis.speak(utter);
     }
 
