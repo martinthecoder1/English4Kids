@@ -230,9 +230,12 @@ h1, h2, h3 {
   border: 3px solid transparent;
   text-align: center;
 }
-.game-card:hover {
-  transform: scale(1.1);
-  box-shadow: 0 14px 32px rgba(0,0,0,.16);
+/* hover jen na zařízeních s myší, ne na dotykových */
+@media (hover: hover) and (pointer: fine) {
+  .game-card:hover {
+    transform: scale(1.1);
+    box-shadow: 0 14px 32px rgba(0,0,0,.16);
+  }
 }
 .game-card.selected { border-color: var(--color-primary); }
 .game-card-icon {

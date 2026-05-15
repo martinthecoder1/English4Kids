@@ -83,7 +83,7 @@
       // Na desktopu – za celý grid
       const diffSection = document.getElementById('difficulty-section');
       const grid = document.getElementById('games-grid');
-      if (window.innerWidth < 600) {
+      if (window.matchMedia('(max-width: 599px)').matches) {
         selectedCard.insertAdjacentElement('afterend', diffSection);
       } else {
         grid.insertAdjacentElement('afterend', diffSection);
