@@ -73,11 +73,16 @@
     function selectGame(game) {
       selectedGame = game;
 
-      // Zvýrazni vybranou kartu
+      // Zvýrazni vybranou kartu a přesuň difficulty-section hned za ni
       document.querySelectorAll('.game-card').forEach(c => c.classList.remove('selected'));
       const cardId = game === 'pexeso' ? 'card-pexeso' : 'card-findword';
       const selectedCard = document.getElementById(cardId);
       selectedCard.classList.add('selected');
+
+      // Přesun difficulty-section vždy za celý games-grid
+      const diffSection = document.getElementById('difficulty-section');
+      const grid = document.getElementById('games-grid');
+      grid.insertAdjacentElement('afterend', diffSection);
 
       // Naplň tlačítka obtížnosti
       const T = CONFIG_STYLES.texts.difficulty;
